@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Library Management System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">MCA PROJECT</p>
+      <h1>Library Management System</h1>
+      <p>Manage books, students, issuing and returns in one place.</p>
+    </div>
+    <div class="hero-mark">LMS</div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="messages">
+          {% for category, message in messages %}
+            <p class="message {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats">
+      <article class="stat"><span>Total book titles</span><strong>{{ stats.books }}</strong></article>
+      <article class="stat"><span>Registered students</span><strong>{{ stats.students }}</strong></article>
+      <article class="stat"><span>Currently issued</span><strong>{{ stats.issued }}</strong></article>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading"><div><p class="eyebrow">COLLECTION</p><h2>Books</h2></div>
+        <input id="bookSearch" type="search" placeholder="Search title, author or category" aria-label="Search books">
+      </div>
+      <div class="table-wrap">
+        <table id="booksTable">
+          <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Available</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for book in books %}
+            <tr>
+              <td>{{ book.title }}</td><td>{{ book.author }}</td><td>{{ book.category }}</td>
+              <td><span class="pill">{{ book.available }} / {{ book.quantity }}</span></td>
+              <td><form method="post" action="{{ url_for('delete_book', book_id=book.id) }}" onsubmit="return confirm('Delete this book?')">
+                <button class="button danger small" type="submit" {% if book.available != book.quantity %}disabled{% endif %}>Delete</button>
+              </form></td>
+            </tr>
+          {% else %}<tr><td colspan="5">No books found. Add your first book below.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <form class="form-grid" method="post" action="{{ url_for('add_book') }}">
+        <input name="title" placeholder="Book title" required>
+        <input name="author" placeholder="Author" required>
+        <input name="category" placeholder="Category">
+        <input name="quantity" type="number" min="0" value="1" required>
+        <button class="button" type="submit">Add book</button>
+      </form>
+    </section>
+
+    <section class="two-col">
+      <section class="panel">
+        <p class="eyebrow">MEMBERS</p><h2>Students</h2>
+        <ul class="student-list">{% for student in students %}
+          <li><span>{{ student.name }}</span><small>{{ student.student_number }}</small></li>
+        {% else %}<li>No students yet.</li>{% endfor %}</ul>
+        <form class="stack-form" method="post" action="{{ url_for('add_student') }}">
+          <input name="name" placeholder="Student full name" required>
+          <input name="student_number" placeholder="Student ID (e.g. MCA003)" required>
+          <button class="button" type="submit">Add student</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <p class="eyebrow">CIRCULATION</p><h2>Issue a book</h2>
+        <form class="stack-form" method="post" action="{{ url_for('issue_book') }}">
+          <label>Book<select name="book_id" required>
+            {% for book in books %}<option value="{{ book.id }}" {% if book.available <= 0 %}disabled{% endif %}>{{ book.title }} ({{ book.available }} available)</option>{% endfor %}
+          </select></label>
+          <label>Student<select name="student_id" required>
+            {% for student in students %}<option value="{{ student.id }}">{{ student.name }} — {{ student.student_number }}</option>{% endfor %}
+          </select></label>
+          <label>Due date<input type="date" name="due_date" required></label>
+          <button class="button" type="submit">Issue book</button>
+        </form>
+      </section>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">TRACKING</p><h2>Active issues</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Book</th><th>Student</th><th>Issue date</th><th>Due date</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>{% for issue in active_issues %}
+          <tr><td>{{ issue.book_title }}</td><td>{{ issue.student_name }}</td><td>{{ issue.issue_date }}</td><td>{{ issue.due_date }}</td>
+          <td>{% if issue.overdue %}<span class="pill overdue">Overdue</span>{% else %}<span class="pill">Issued</span>{% endif %}</td>
+          <td><form method="post" action="{{ url_for('return_book', issue_id=issue.id) }}"><button class="button small" type="submit">Mark returned</button></form></td></tr>
+        {% else %}<tr><td colspan="6">No active book issues.</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+    <footer>Library Management System · Beginner-friendly MCA project</footer>
+  </main>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
